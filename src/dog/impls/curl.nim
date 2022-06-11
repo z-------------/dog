@@ -1,4 +1,4 @@
-import ./types
+import ../types
 import pkg/libcurl
 import std/strutils
 

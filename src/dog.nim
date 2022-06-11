@@ -1,6 +1,6 @@
 import dog/types
 when defined(linux):
-  import dog/linux
+  import dog/impls/curl
 else:
   {.error: "Unsupported platform".}
 
