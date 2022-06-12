@@ -41,12 +41,12 @@ type
 
 template checkVal(handle: HInternet): HInternet =
   if handle.isNil:
-    raise newException(DogError, $GetLastError())
+    raise newException(DogError, $GetLastError().strerror.dup(stripLineEnd))
   handle
 
 template checkVal(val: Bool): untyped =
   if val == 0:
-    raise newException(DogError, $GetLastError().strerror)
+    raise newException(DogError, $GetLastError().strerror.dup(stripLineEnd))
 
 proc `=destroy`*(dog: var Dog) =
   discard WinHttpCloseHandle(dog.hConnect)

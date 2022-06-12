@@ -56,19 +56,19 @@ proc `$`*(p: ptr WCHAR): string =
     # Trim this null terminating character.
     result.setLen(len - 1)
 
-proc strerror*(errno: Dword): string =
-  if errno == 0:
-    result = ""
+proc strerror*(errnum: Dword): string =
+  if errnum == 0:
+    ""
   else:
     const BufSize = 256
     var buf: array[BufSize, char]
     discard FormatMessageA(
       FormatMessageFromSystem or FormatMessageIgnoreInserts,
       nil,
-      errno,
+      errnum,
       MakeLangId(LangNeutral, SublangDefault).Dword,
       buf[0].addr,
       BufSize,
       nil
     )
-    result = $buf[0].addr.cstring
+    $buf[0].addr.cstring
