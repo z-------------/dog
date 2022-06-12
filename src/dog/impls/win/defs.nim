@@ -56,6 +56,16 @@ const
   LANG_NEUTRAL* = 0x00
   SUBLANG_DEFAULT* = 0x01
 
+const
+  WINHTTP_OPTION_DECOMPRESSION* = 118
+
+const
+  WINHTTP_DECOMPRESSION_FLAG_GZIP* = 1
+  WINHTTP_DECOMPRESSION_FLAG_DEFLATE* = 2
+  WINHTTP_DECOMPRESSION_FLAG_ALL* =
+    WINHTTP_DECOMPRESSION_FLAG_GZIP or
+    WINHTTP_DECOMPRESSION_FLAG_DEFLATE
+
 {.push importc, stdcall.}
 
 proc GetLastError*(): DWORD {.dynlib: "kernel32".}
@@ -146,6 +156,13 @@ proc WinHttpReadData*(
   lpBuffer: LPVOID,
   dwNumberOfBytesToRead: DWORD,
   lpdwNumberOfBytesRead: LPDWORD
+): BOOL {.dynlib: "winhttp".}
+
+proc WinHttpSetOption*(
+  hInternet: HINTERNET,
+  dwOption: DWORD,
+  lpBuffer: LPVOID,
+  dwBufferLength: DWORD
 ): BOOL {.dynlib: "winhttp".}
 
 proc WinHttpCloseHandle*(hInternet: HINTERNET): BOOL {.dynlib: "winhttp".}

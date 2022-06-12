@@ -15,6 +15,9 @@ import win/defs
 import win/utils
 import std/strutils
 import std/uri
+import std/sugar
+import std/sequtils
+import std/options
 
 const
   Crlf = "\r\n"
@@ -22,7 +25,7 @@ const
 type
   Dog* = object
     followLocationOpt: bool
-    acceptEncodingOpt: string
+    acceptEncodingOpt: seq[Encoding]
     headerCallbackOpt: HeaderCallback
     bodyCallbackOpt: DataCallback
 
@@ -32,6 +35,9 @@ type
     wideVerb: string
     wideObjectName: string
     openRequestFlags: Dword
+  Encoding = object
+    name: string
+    quality: string
 
 template checkVal(handle: HInternet): HInternet =
   if handle.isNil:
@@ -99,8 +105,32 @@ proc `url=`*(dog: var Dog; urlStr: string) =
 func `followLocation=`*(dog: var Dog; followLocation: bool) =
   dog.followLocationOpt = followLocation
 
+template splitStrip(str: string; separator: untyped): seq[string] =
+  str.split(separator).mapIt(it.strip)
+
+func parseEncoding(encodingStr: string): Option[Encoding] =
+  let parts = encodingStr.splitStrip(';')
+  if parts.len >= 1:
+    let
+      name = parts[0]
+      quality =
+        if parts.len >= 2:
+          let qualitySplit = parts[1].splitStrip('=')
+          if qualitySplit.len >= 2 and qualitySplit[0] == "q":
+            qualitySplit[1]
+          else:
+            ""
+        else:
+          ""
+    Encoding(name: name, quality: quality).some
+  else:
+    Encoding.none
+
 func `acceptEncoding=`*(dog: var Dog; acceptEncoding: string) =
-  dog.acceptEncodingOpt = acceptEncoding
+  for encodingStr in acceptEncoding.splitStrip(','):
+    let encoding = parseEncoding(encodingStr)
+    if encoding.isSome:
+      dog.acceptEncodingOpt.add(encoding.get)
 
 func `headerCallback=`*(dog: var Dog; headerCallback: HeaderCallback) =
   dog.headerCallbackOpt = headerCallback
@@ -128,13 +158,35 @@ proc perform*(dog: var Dog) =
       dog.openRequestFlags.Dword
     ).checkVal
 
-    let wideRequestHeaderBuf = "user-agent: dog/0.1.0\r\n".wstr()
-    if wideRequestHeaderBuf.len > 0:
+    var headers = @["user-agent: dog/0.1.0"]
+    if headers.len > 0:
+      let wideRequestHeaderBuf = headers.mapIt(it & Crlf).join.wstr()
       WinHttpAddRequestHeaders(
         hRequest,
         cast[ptr Wchar](wideRequestHeaderBuf[0].unsafeAddr),
         -1,
         (WinhttpAddreqFlagAdd or WinhttpAddreqFlagReplace).Dword
+      ).checkVal
+
+    if dog.acceptEncodingOpt.len > 0:
+      var flags: Dword
+      for encoding in dog.acceptEncodingOpt:
+        let flag =
+          case encoding.name
+          of "*":
+            WinhttpDecompressionFlagAll
+          of "gzip":
+            WinhttpDecompressionFlagGzip
+          of "deflate":
+            WinhttpDecompressionFlagDeflate
+          else:
+            raise newException(DogError, "Unsupported encoding '" & encoding.name & "'")
+        flags = flags or flag.Dword
+      WinHttpSetOption(
+        hRequest,
+        WinhttpOptionDecompression,
+        flags.unsafeAddr,
+        sizeof(flags).Dword
       ).checkVal
 
     WinHttpSendRequest(
