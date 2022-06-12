@@ -1,15 +1,16 @@
 import dog/types
 when defined(linux):
   import dog/impls/curl
+  export curl
 elif defined(windows):
   import dog/impls/win
+  export win
 else:
   {.error: "Unsupported platform".}
-import std/strutils
 
 type
   DogConcept {.explain.} = concept
-    proc initDog(): Self
+    proc initDogImpl(): Self
 
     proc `url=`(dog: var Self; url: string)
     proc `followLocation=`(dog: var Self; followLocation: bool)
@@ -22,18 +23,23 @@ type
 # when Dog isnot DogConcept:
 #   {.error: "Incorrect implementation of Dog".}
 
-func toString(data: openArray[byte]): string =
-  result = newString(data.len)
-  for i, b in data.pairs:
-    result[i] = b.char
+func initDog*(): Dog =
+  result = initDogImpl()
+  result.followLocation = true
+  result.acceptEncoding = "gzip"
 
 when isMainModule:
-  var dog = initDog()
-  dog.url = "https://curl.se/libcurl/c/simple.html"
-  dog.followLocation = true
-  dog.acceptEncoding = "gzip"
+  import std/strutils
+
+  func toString(data: openArray[byte]): string =
+    result = newString(data.len)
+    for i, b in data.pairs:
+      result[i] = b.char
+
   var totalBytes = 0
 
+  var dog = initDog()
+  dog.url = "https://curl.se/libcurl/c/simple.html"
   dog.headerCallback = proc (key, value: string) =
     case key.toLowerAscii
     of "content-encoding", "content-length":

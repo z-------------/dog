@@ -13,7 +13,7 @@ template checkCode(code: Code) =
 proc `=destroy`*(dog: var Dog) =
   easyCleanup(dog.curl)
 
-func initDog*(): Dog =
+func initDogImpl*(): Dog =
   Dog(
     curl: easyInit(),
   )

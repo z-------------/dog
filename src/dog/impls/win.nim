@@ -52,7 +52,7 @@ proc `=destroy`*(dog: var Dog) =
   discard WinHttpCloseHandle(dog.hConnect)
   discard WinHttpCloseHandle(dog.hSession)
 
-proc initDog*(): Dog =
+proc initDogImpl*(): Dog =
   result.hSession = WinHttpOpen(
     nil,
     WinhttpAccessTypeAutomaticProxy,
