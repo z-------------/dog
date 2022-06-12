@@ -150,9 +150,17 @@ proc WinHttpReadData*(
 
 proc WinHttpCloseHandle*(hInternet: HINTERNET): BOOL {.dynlib: "winhttp".}
 
-proc FormatMessageA*(dwFlags: DWORD, lpSource: LPCVOID, dwMessageId: DWORD, dwLanguageId: DWORD, lpBuffer: LPSTR, nSize: DWORD, Arguments: pointer): DWORD {.dynlib: "kernel32".}
+proc FormatMessageA*(
+  dwFlags: DWORD,
+  lpSource: LPCVOID,
+  dwMessageId: DWORD,
+  dwLanguageId: DWORD,
+  lpBuffer: LPSTR,
+  nSize: DWORD,
+  Arguments: pointer
+): DWORD {.dynlib: "kernel32".}
 
-template MAKELANGID*(p: untyped, s: untyped): WORD =
+template MAKELANGID*(p, s: untyped): WORD =
   s.WORD shl 10 or p.WORD
 
 proc LocalFree*(hMem: HLOCAL): HLOCAL {.dynlib: "kernel32".}
