@@ -1,5 +1,6 @@
 import pkg/dog
 import std/strutils
+import std/os
 
 func toString(data: openArray[byte]): string =
   result = newString(data.len)
@@ -9,7 +10,11 @@ func toString(data: openArray[byte]): string =
 var totalBytes = 0
 
 var client = initDog()
-client.url = "https://curl.se/libcurl/c/simple.html"
+client.url =
+  if paramCount() >= 1:
+    paramStr(1)
+  else:
+    "https://example.com"
 client.headerCallback = proc (key, value: string) =
   case key.toLowerAscii
   of "content-encoding", "content-length", "content-type":
