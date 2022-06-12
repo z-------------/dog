@@ -62,7 +62,12 @@ proc initDogImpl*(): Dog =
   ).checkVal
 
 proc `url=`*(dog: var Dog; urlStr: string) =
-  let url = urlStr.parseUri
+  let url = block:
+    var url = urlStr.parseUri
+    if url.path == "":
+      url.path = "/"
+    url
+
   var port: InternetPort
   if url.port == "":
     case url.scheme:
