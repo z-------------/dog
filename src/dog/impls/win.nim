@@ -246,9 +246,7 @@ proc perform*(dog: var Dog) =
     let responseHeaders = ($cast[ptr Wchar](responseHeaderBuf[0].addr)).split(Crlf)
     if responseHeaders.len == 0:
       raise newException(DogError, "Error parsing response headers")
-    for i, line in responseHeaders:
-      if i == 0: # HTTP/1.1 200 OK
-        continue
+    for line in responseHeaders.toOpenArray(1, responseHeaders.high):
       if line != "":
         let parts = line.split(":", 1)
         if parts.len == 2:

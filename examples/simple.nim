@@ -12,7 +12,7 @@ var client = initDog()
 client.url = "https://curl.se/libcurl/c/simple.html"
 client.headerCallback = proc (key, value: string) =
   case key.toLowerAscii
-  of "content-encoding", "content-length":
+  of "content-encoding", "content-length", "content-type":
     stdout.writeLine "[", key, ": ", value, "]"
   else:
     discard
