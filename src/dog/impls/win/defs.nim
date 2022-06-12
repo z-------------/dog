@@ -32,6 +32,7 @@ type
   INTERNET_PORT* = WORD
   DWORD_PTR* = ULONG_PTR
   LPVOID* = pointer
+  LPCVOID* = pointer
   HANDLE* = int
   HLOCAL* = HANDLE
 
@@ -149,7 +150,7 @@ proc WinHttpReadData*(
 
 proc WinHttpCloseHandle*(hInternet: HINTERNET): BOOL {.dynlib: "winhttp".}
 
-proc FormatMessageA*(dwFlags: DWORD, lpSource: pointer, dwMessageId: DWORD, dwLanguageId: DWORD, lpBuffer: LPSTR, nSize: DWORD, Arguments: pointer): DWORD {.dynlib: "kernel32".}
+proc FormatMessageA*(dwFlags: DWORD, lpSource: LPCVOID, dwMessageId: DWORD, dwLanguageId: DWORD, lpBuffer: LPSTR, nSize: DWORD, Arguments: pointer): DWORD {.dynlib: "kernel32".}
 
 template MAKELANGID*(p: untyped, s: untyped): WORD =
   s.WORD shl 10 or p.WORD
