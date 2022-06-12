@@ -6,6 +6,7 @@ elif defined(windows):
 else:
   {.error: "Unsupported platform".}
 import std/os
+import std/strutils
 
 export `url=`
 export `followLocation=`
@@ -18,6 +19,24 @@ func initDog*(): Dog =
   result = initDogImpl()
   result.followLocation = true
   result.acceptEncoding = "gzip"
+
+proc fetch*(url: string): string =
+  var
+    resultStr: string
+    client = initDog()
+  client.url = url
+  client.headerCallback = proc (key, value: string) =
+    if resultStr.len == 0 and key.toLowerAscii == "content-length":
+      try:
+        let contentLength = value.parseInt
+        resultStr = newStringOfCap(contentLength)
+      except ValueError:
+        discard
+  client.bodyCallback = proc (data: openArray[byte]) =
+    for b in data:
+      resultStr.add(b.char)
+  client.perform()
+  resultStr
 
 proc entExists(filename: string): bool =
   fileExists(filename) or dirExists(filename) or symlinkExists(filename)
