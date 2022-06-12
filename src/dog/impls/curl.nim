@@ -6,6 +6,9 @@ type
   Dog* = object
     curl {.requiresInit.}: PCurl
 
+    headerCallbackOpt: HeaderCallback
+    bodyCallbackOpt: DataCallback
+
 template checkCode(code: Code) =
   if code != EOk:
     raise newException(DogError, $easyStrerror(code))
@@ -32,8 +35,10 @@ func `acceptEncoding=`*(dog: var Dog; acceptEncoding: string) =
       OptEncoding
   dog.curl.easySetOpt(optName, acceptEncoding).checkCode
 
-func `headerCallback=`*(dog: var Dog; callback: HeaderCallback) =
-  dog.curl.easySetOpt(OptHeaderData, cast[pointer](callback)).checkCode
+func `headerCallback=`*(dog: var Dog; headerCallback: HeaderCallback) =
+  dog.headerCallbackOpt = headerCallback
+
+  dog.curl.easySetOpt(OptHeaderData, dog.addr).checkCode
   dog.curl.easySetOpt(OptHeaderFunction, proc (data: ptr UncheckedArray[char]; size, nMemb: csizeT; userData: pointer): csizeT =
     let
       len = size * nMemb - 2
@@ -44,16 +49,18 @@ func `headerCallback=`*(dog: var Dog; callback: HeaderCallback) =
         v
       dataSplit = dataStr.split(": ", 1)
     if dataSplit.len == 2:
-      let callback = cast[HeaderCallback](userData)
-      callback(dataSplit[0], dataSplit[1])
+      let dog = cast[ptr Dog](userData)
+      dog.headerCallbackOpt(dataSplit[0], dataSplit[1])
     size * nMemb
   ).checkCode
 
-func `bodyCallback=`*(dog: var Dog; callback: DataCallback) =
-  dog.curl.easySetOpt(OptWriteData, cast[pointer](callback)).checkCode
+func `bodyCallback=`*(dog: var Dog; bodyCallback: DataCallback) =
+  dog.bodyCallbackOpt = bodyCallback
+
+  dog.curl.easySetOpt(OptWriteData, dog.addr).checkCode
   dog.curl.easySetOpt(OptWriteFunction, proc (data: ptr UncheckedArray[char]; size, nMemb: csizeT; userData: pointer): csizeT =
-    let callback = cast[DataCallback](userData)
-    callback(data.toOpenArrayByte(0, (size * nMemb - 1).int))
+    let dog = cast[ptr Dog](userData)
+    dog.bodyCallbackOpt(data.toOpenArrayByte(0, (size * nMemb - 1).int))
     size * nMemb
   ).checkCode
 
