@@ -25,7 +25,6 @@ const
 type
   Dog* = object
     followLocationOpt: bool
-    acceptEncodingOpt: seq[Encoding]
     headerCallbackOpt: HeaderCallback
     bodyCallbackOpt: DataCallback
 
@@ -37,6 +36,7 @@ type
     wideVerb: string
     wideObjectName: string
     openRequestFlags: Dword
+    decompressionFlags: Dword
   Encoding = object
     name: string
 
@@ -114,11 +114,24 @@ func parseEncoding(encodingStr: string): Option[Encoding] =
     Encoding.none
 
 func `acceptEncoding=`*(dog: var Dog; acceptEncoding: string) =
-  dog.acceptEncodingOpt.setLen(0)
+  var flags: Dword
   for encodingStr in acceptEncoding.splitStrip(','):
     let encoding = parseEncoding(encodingStr)
     if encoding.isSome:
-      dog.acceptEncodingOpt.add(encoding.get)
+      let flag =
+        case encoding.get.name
+        of "*":
+          WinhttpDecompressionFlagAll
+        of "gzip":
+          WinhttpDecompressionFlagGzip
+        of "deflate":
+          WinhttpDecompressionFlagDeflate
+        else:
+          raise newException(DogError, "Unsupported encoding '" & encoding.get.name & "'")
+      flags = flags or flag.Dword
+    else:
+      raise newException(DogError, "Invalid encoding '" & encodingStr & "'")
+  dog.decompressionFlags = flags
 
 func `headerCallback=`*(dog: var Dog; headerCallback: HeaderCallback) =
   dog.headerCallbackOpt = headerCallback
@@ -159,26 +172,12 @@ proc perform*(dog: var Dog) =
         (WinhttpAddreqFlagAdd or WinhttpAddreqFlagReplace).Dword
       ).checkVal
 
-    if dog.acceptEncodingOpt.len > 0:
-      var flags: Dword
-      for encoding in dog.acceptEncodingOpt:
-        let flag =
-          case encoding.name
-          of "*":
-            WinhttpDecompressionFlagAll
-          of "gzip":
-            WinhttpDecompressionFlagGzip
-          of "deflate":
-            WinhttpDecompressionFlagDeflate
-          else:
-            raise newException(DogError, "Unsupported encoding '" & encoding.name & "'")
-        flags = flags or flag.Dword
-      WinHttpSetOption(
-        hRequest,
-        WinhttpOptionDecompression,
-        flags.unsafeAddr,
-        sizeof(flags).Dword
-      ).checkVal
+    WinHttpSetOption(
+      hRequest,
+      WinhttpOptionDecompression,
+      dog.decompressionFlags.unsafeAddr,
+      sizeof(dog.decompressionFlags).Dword
+    ).checkVal
 
     WinHttpSendRequest(
       hRequest,
