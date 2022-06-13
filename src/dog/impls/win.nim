@@ -116,22 +116,23 @@ func parseEncoding(encodingStr: string): Option[Encoding] =
 
 func `acceptEncoding=`*(dog: var Dog; acceptEncoding: string) =
   var flags: Dword
-  for encodingStr in acceptEncoding.splitStrip(','):
-    let encoding = parseEncoding(encodingStr)
-    if encoding.isSome:
-      let flag =
-        case encoding.get.name
-        of "*":
-          WinhttpDecompressionFlagAll
-        of "gzip":
-          WinhttpDecompressionFlagGzip
-        of "deflate":
-          WinhttpDecompressionFlagDeflate
-        else:
-          raise newException(DogError, "Unsupported encoding '" & encoding.get.name & "'")
-      flags = flags or flag.Dword
-    else:
-      raise newException(DogError, "Invalid encoding '" & encodingStr & "'")
+  if acceptEncoding.strip != "":
+    for encodingStr in acceptEncoding.splitStrip(','):
+      let encoding = parseEncoding(encodingStr)
+      if encoding.isSome:
+        let flag =
+          case encoding.get.name
+          of "*":
+            WinhttpDecompressionFlagAll
+          of "gzip":
+            WinhttpDecompressionFlagGzip
+          of "deflate":
+            WinhttpDecompressionFlagDeflate
+          else:
+            raise newException(DogError, "Unsupported encoding '" & encoding.get.name & "'")
+        flags = flags or flag.Dword
+      else:
+        raise newException(DogError, "Invalid encoding '" & encodingStr & "'")
   dog.decompressionFlags = flags
 
 func `headerCallback=`*(dog: var Dog; headerCallback: HeaderCallback) =
