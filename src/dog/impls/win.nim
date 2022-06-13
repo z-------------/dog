@@ -32,6 +32,8 @@ type
     hSession: HInternet
     hConnect: HInternet
 
+    port: InternetPort
+    wideHostname: string
     wideVerb: string
     wideObjectName: string
     openRequestFlags: Dword
@@ -88,12 +90,15 @@ proc `url=`*(dog: var Dog; urlStr: string) =
 
   let wideHostname = url.hostname.wstr()
 
-  dog.hConnect = WinHttpConnect(
-    dog.hSession,
-    cast[ptr Wchar](wideHostname[0].unsafeAddr),
-    port,
-    0
-  ).checkVal
+  if port != dog.port or wideHostname != dog.wideHostname:
+    dog.hConnect = WinHttpConnect(
+      dog.hSession,
+      cast[ptr Wchar](wideHostname[0].unsafeAddr),
+      port,
+      0
+    ).checkVal
+  dog.port = port
+  dog.wideHostname = wideHostname
 
   var openRequestFlags: Dword
   if url.scheme == "https":
@@ -148,7 +153,7 @@ proc perform*(dog: var Dog) =
   try:
     let
       defaultAcceptType = "*/*".wstr()
-      defaultacceptTypes = [
+      defaultAcceptTypes = [
         cast[ptr Wchar](defaultAcceptType[0].unsafeAddr),
         nil,
       ]
@@ -159,7 +164,7 @@ proc perform*(dog: var Dog) =
       cast[ptr Wchar](dog.wideObjectName[0].unsafeAddr),
       nil,
       nil,
-      cast[ptr ptr Wchar](defaultacceptTypes.unsafeAddr),
+      cast[ptr ptr Wchar](defaultAcceptTypes.unsafeAddr),
       dog.openRequestFlags.Dword
     ).checkVal
 
