@@ -18,6 +18,7 @@ import std/uri
 import std/sugar
 import std/sequtils
 import std/options
+import std/strscans
 
 const
   Crlf = "\r\n"
@@ -142,6 +143,16 @@ func `bodyCallback=`*(dog: var Dog; bodyCallback: DataCallback) =
 func `verb=`*(dog: var Dog; verb: Verb) =
   dog.wideVerb = ($verb).wstr()
 
+func parseResponseCode(startLine: string): HttpCode =
+  var
+    httpVersion: string
+    code: int
+    statusText: string
+  if startLine.scanf("HTTP/$+ $i $*", httpVersion, code, statusText):
+    code.HttpCode
+  else:
+    raise newException(DogError, "Failed to parse response start line")
+
 proc perform*(dog: var Dog) =
   var hRequest: HInternet
   try:
@@ -236,6 +247,9 @@ proc perform*(dog: var Dog) =
     let responseHeaders = ($cast[ptr Wchar](responseHeaderBuf[0].addr)).split(Crlf)
     if responseHeaders.len == 0:
       raise newException(DogError, "Error parsing response headers")
+    let responseCode = parseResponseCode(responseHeaders[0])
+    if responseCode.int >= 400:
+      raise newDogHttpError(responseCode)
     for line in responseHeaders.toOpenArray(1, responseHeaders.high):
       if line != "":
         let parts = line.split(":", 1)
