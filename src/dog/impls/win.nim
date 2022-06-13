@@ -39,7 +39,6 @@ type
     openRequestFlags: Dword
   Encoding = object
     name: string
-    quality: string
 
 template checkVal(handle: HInternet): HInternet =
   if handle.isNil:
@@ -109,23 +108,13 @@ template splitStrip(str: string; separator: untyped): seq[string] =
 
 func parseEncoding(encodingStr: string): Option[Encoding] =
   let parts = encodingStr.splitStrip(';')
-  if parts.len >= 1:
-    let
-      name = parts[0]
-      quality =
-        if parts.len >= 2:
-          let qualitySplit = parts[1].splitStrip('=')
-          if qualitySplit.len >= 2 and qualitySplit[0] == "q":
-            qualitySplit[1]
-          else:
-            ""
-        else:
-          ""
-    Encoding(name: name, quality: quality).some
+  if parts.len >= 1 and parts[0] != "":
+    Encoding(name: parts[0]).some
   else:
     Encoding.none
 
 func `acceptEncoding=`*(dog: var Dog; acceptEncoding: string) =
+  dog.acceptEncodingOpt.setLen(0)
   for encodingStr in acceptEncoding.splitStrip(','):
     let encoding = parseEncoding(encodingStr)
     if encoding.isSome:
