@@ -54,15 +54,6 @@ proc `=destroy`*(dog: var Dog) =
   discard WinHttpCloseHandle(dog.hConnect)
   discard WinHttpCloseHandle(dog.hSession)
 
-proc initDogImpl*(): Dog =
-  result.hSession = WinHttpOpen(
-    nil,
-    WinhttpAccessTypeAutomaticProxy,
-    nil,
-    nil,
-    0
-  ).checkVal
-
 proc `url=`*(dog: var Dog; urlStr: string) =
   let url = block:
     var url = urlStr.parseUri
@@ -108,7 +99,6 @@ proc `url=`*(dog: var Dog; urlStr: string) =
   if url.query != "":
     objectName &= "?" & url.query
 
-  dog.wideVerb = "GET".wstr()
   dog.wideObjectName = objectName.wstr()
 
 func `followLocation=`*(dog: var Dog; followLocation: bool) =
@@ -146,6 +136,9 @@ func `headerCallback=`*(dog: var Dog; headerCallback: HeaderCallback) =
 
 func `bodyCallback=`*(dog: var Dog; bodyCallback: DataCallback) =
   dog.bodyCallbackOpt = bodyCallback
+
+func `verb=`*(dog: var Dog; verb: Verb) =
+  dog.wideVerb = ($verb).wstr()
 
 proc perform*(dog: var Dog) =
   var hRequest: HInternet
@@ -283,3 +276,13 @@ proc perform*(dog: var Dog) =
         dog.bodyCallbackOpt(buf.toOpenArray(0, bytesRead - 1))
   finally:
     discard WinHttpCloseHandle(hRequest)
+
+proc initDogImpl*(): Dog =
+  result.hSession = WinHttpOpen(
+    nil,
+    WinhttpAccessTypeAutomaticProxy,
+    nil,
+    nil,
+    0
+  ).checkVal
+  result.verb = Get

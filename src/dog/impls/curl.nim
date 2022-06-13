@@ -64,5 +64,12 @@ func `bodyCallback=`*(dog: var Dog; bodyCallback: DataCallback) =
     size * nMemb
   ).checkCode
 
+func `verb=`*(dog: var Dog; verb: Verb) =
+  case verb
+  of Get:
+    dog.curl.easySetOpt(OptHttpGet, 1).checkCode
+  of Head:
+    dog.curl.easySetOpt(OptNobody, 1).checkCode
+
 proc perform*(dog: var Dog) =
   dog.curl.easyPerform().checkCode
