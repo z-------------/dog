@@ -17,9 +17,10 @@ proc `=destroy`*(dog: var Dog) =
   easyCleanup(dog.curl)
 
 func initDogImpl*(): Dog =
-  Dog(
+  result = Dog(
     curl: easyInit(),
   )
+  result.curl.easySetOpt(OptFailOnError, 1).checkCode
 
 func `url=`*(dog: var Dog; url: sink string) =
   dog.curl.easySetOpt(OptUrl, url).checkCode
@@ -72,4 +73,11 @@ func `verb=`*(dog: var Dog; verb: Verb) =
     dog.curl.easySetOpt(OptNobody, 1).checkCode
 
 proc perform*(dog: var Dog) =
-  dog.curl.easyPerform().checkCode
+  let curlCode = dog.curl.easyPerform()
+  case curlCode
+  of EHttpReturnedError:
+    var responseCode: clong
+    dog.curl.easyGetInfo(InfoResponseCode, responseCode.addr).checkCode
+    raise newDogHttpError(responseCode.HttpCode)
+  else:
+    curlCode.checkCode
