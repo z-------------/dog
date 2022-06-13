@@ -70,24 +70,23 @@ proc `url=`*(dog: var Dog; urlStr: string) =
       url.path = "/"
     url
 
-  var port: InternetPort
-  if url.port == "":
-    case url.scheme:
-    of "http":
-      port = 80
-    of "https":
-      port = 443
+  let port =
+    if url.port == "":
+      case url.scheme:
+      of "http":
+        80.InternetPort
+      of "https":
+        443.InternetPort
+      else:
+        raise newException(ValueError, "Unsupported scheme '" & url.scheme & "'")
     else:
-      discard # Scheme is validated above
-  else:
-    try:
-      let parsedPort = parseInt(url.port)
-      if parsedPort < 0 or parsedPort > uint16.high.int:
-        raise newException(DogError, "Invalid port: " & url.port)
-      port = parsedPort.uint16
-    except ValueError as e:
-      raise newException(DogError, "Parsing port failed", e)
-
+      try:
+        let parsedPort = parseInt(url.port)
+        if parsedPort < 0 or parsedPort > uint16.high.int:
+          raise newException(DogError, "Invalid port: " & url.port)
+        parsedPort.InternetPort
+      except ValueError as e:
+        raise newException(DogError, "Parsing port failed", e)
   let wideHostname = url.hostname.wstr()
 
   if port != dog.port or wideHostname != dog.wideHostname:
