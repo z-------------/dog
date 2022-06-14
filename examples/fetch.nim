@@ -6,4 +6,4 @@ let url =
     paramStr(1)
   else:
     "https://example.com"
-echo fetch(url)
+stdout.write fetch(url)
