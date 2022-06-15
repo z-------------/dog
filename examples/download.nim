@@ -5,5 +5,5 @@ let url =
   if paramCount() >= 1:
     paramStr(1)
   else:
-    "https://example.com"
-download(url, "downloadedFile")
+    "https://example.com/index.html"
+download(url)

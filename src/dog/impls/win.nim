@@ -11,8 +11,9 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import ../types
+import ../utils
 import win/defs
-import win/utils
+import win/utils as winUtils
 import std/strutils
 import std/uri
 import std/sugar
@@ -97,9 +98,6 @@ proc `url=`*(dog: var Dog; urlStr: string) =
 
 func `followLocation=`*(dog: var Dog; followLocation: bool) =
   dog.followLocationOpt = followLocation
-
-template splitStrip(str: string; separator: untyped): seq[string] =
-  str.split(separator).mapIt(it.strip)
 
 func parseEncoding(encodingStr: string): Option[Encoding] =
   let parts = encodingStr.splitStrip(';')

@@ -7,6 +7,7 @@ elif defined(windows):
 else:
   {.error: "Unsupported platform".}
 import std/strutils
+import std/options
 
 export `url=`
 export `followLocation=`
@@ -41,16 +42,25 @@ proc fetch*(url: string): string =
   var client = initDog()
   client.fetch(url)
 
-proc download*(client: var Dog; url: string; filename: string) =
-  let
-    uniqueFilename = getUniqueFilename(filename)
-    outFile = open(uniqueFilename, fmWrite)
+proc download*(client: var Dog; url: string; filename = "") =
+  var
+    outFile: File
+    filename = filename
   client.url = url
+  if filename == "":
+    filename = getFilenameFromUrl(url)
+    client.headerCallback = proc (key, value: string) =
+      if key.toLowerAscii == "content-disposition":
+        let suggestedFilename = parseContentDispositionFilename(value)
+        if suggestedFilename.isSome:
+          filename = suggestedFilename.get
   client.bodyCallback = proc (data: openArray[byte]) =
+    if outFile.isNil:
+      outFile = open(filename.toValidFilename.getUniqueFilename, fmWrite)
     if outFile.writeBytes(data, 0, data.len) < data.len:
       raise newException(DogError, "Failed to write to file")
   client.perform()
 
-proc download*(url: string; filename: string) =
+proc download*(url: string; filename = "") =
   var client = initDog()
   client.download(url, filename)
