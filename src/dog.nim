@@ -42,10 +42,11 @@ proc fetch*(url: string): string =
   var client = initDog()
   client.fetch(url)
 
-proc download*(client: var Dog; url: string; filename = "") =
+proc download*(client: var Dog; url: string; filename = ""): string =
   var
     outFile: File
     filename = filename
+    effectiveFilename: string
   client.url = url
   if filename == "":
     filename = getFilenameFromUrl(url)
@@ -56,11 +57,13 @@ proc download*(client: var Dog; url: string; filename = "") =
           filename = suggestedFilename.get
   client.bodyCallback = proc (data: openArray[byte]) =
     if outFile.isNil:
-      outFile = open(filename.toValidFilename.getUniqueFilename, fmWrite)
+      effectiveFilename = filename.toValidFilename.getUniqueFilename
+      outFile = open(effectiveFilename, fmWrite)
     if outFile.writeBytes(data, 0, data.len) < data.len:
       raise newException(DogError, "Failed to write to file")
   client.perform()
+  effectiveFilename
 
-proc download*(url: string; filename = "") =
+proc download*(url: string; filename = ""): string =
   var client = initDog()
   client.download(url, filename)

@@ -6,4 +6,5 @@ let url =
     paramStr(1)
   else:
     "https://example.com/index.html"
-download(url)
+let filename = download(url)
+echo "Downloaded as '", filename, "'"
