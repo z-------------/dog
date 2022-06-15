@@ -162,7 +162,8 @@ proc perform*(dog: var Dog) =
       dog.port,
       0
     ).checkVal
-  assert not dog.hConnect.isNil
+  if dog.hConnect.isNil:
+    raise newException(DogError, "Cannot perform request without URL")
 
   try:
     let
