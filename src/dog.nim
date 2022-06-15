@@ -1,11 +1,11 @@
 import dog/types
+import dog/utils
 when defined(linux):
   import dog/impls/curl
 elif defined(windows):
   import dog/impls/win
 else:
   {.error: "Unsupported platform".}
-import std/os
 import std/strutils
 
 export `url=`
@@ -21,10 +21,8 @@ func initDog*(): Dog =
   result.acceptEncoding = "gzip"
   result.verb = Get
 
-proc fetch*(url: string): string =
-  var
-    resultStr: string
-    client = initDog()
+proc fetch*(client: var Dog; url: string): string =
+  var resultStr: string
   client.url = url
   client.headerCallback = proc (key, value: string) =
     if resultStr.len == 0 and key.toLowerAscii == "content-length":
@@ -39,27 +37,20 @@ proc fetch*(url: string): string =
   client.perform()
   resultStr
 
-proc entExists(filename: string): bool =
-  fileExists(filename) or dirExists(filename) or symlinkExists(filename)
+proc fetch*(url: string): string =
+  var client = initDog()
+  client.fetch(url)
 
-proc getUniqueFilename(filename: string): string =
-  if entExists(filename):
-    var
-      newFilename: string
-      counter = 1
-    while entExists((newFilename = filename & '.' & $counter; newFilename)):
-      inc counter
-    newFilename
-  else:
-    filename
-
-proc download*(url: string; filename: string) =
+proc download*(client: var Dog; url: string; filename: string) =
   let
     uniqueFilename = getUniqueFilename(filename)
     outFile = open(uniqueFilename, fmWrite)
-  var client = initDog()
   client.url = url
   client.bodyCallback = proc (data: openArray[byte]) =
     if outFile.writeBytes(data, 0, data.len) < data.len:
       raise newException(DogError, "Failed to write to file")
   client.perform()
+
+proc download*(url: string; filename: string) =
+  var client = initDog()
+  client.download(url, filename)
