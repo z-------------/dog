@@ -33,6 +33,7 @@ type
 
     port: InternetPort
     wideHostname: string
+    needNewConnection: bool
     wideVerb: string
     wideObjectName: string
     openRequestFlags: Dword
@@ -79,13 +80,7 @@ proc `url=`*(dog: var Dog; urlStr: string) =
         raise newException(DogError, "Parsing port failed", e)
   let wideHostname = url.hostname.wstr()
 
-  if port != dog.port or wideHostname != dog.wideHostname:
-    dog.hConnect = WinHttpConnect(
-      dog.hSession,
-      cast[ptr Wchar](wideHostname[0].unsafeAddr),
-      port,
-      0
-    ).checkVal
+  dog.needNewConnection = port != dog.port or wideHostname != dog.wideHostname
   dog.port = port
   dog.wideHostname = wideHostname
 
@@ -158,6 +153,17 @@ func getResponseCode(hRequest: HInternet): HttpCode =
 
 proc perform*(dog: var Dog) =
   var hRequest: HInternet
+
+  if dog.needNewConnection:
+    discard WinHttpCloseHandle(dog.hConnect)
+    dog.hConnect = WinHttpConnect(
+      dog.hSession,
+      cast[ptr Wchar](dog.wideHostname[0].addr),
+      dog.port,
+      0
+    ).checkVal
+  assert not dog.hConnect.isNil
+
   try:
     let
       defaultAcceptType = "*/*".wstr()
