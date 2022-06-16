@@ -31,7 +31,15 @@ func `acceptEncoding=`*(dog: var Dog; acceptEncoding: string) =
       OptAcceptEncoding
     else:
       OptEncoding
-  dog.curl.easySetOpt(optName, acceptEncoding).checkCode
+  let optVal =
+    case acceptEncoding
+    of "":
+      nil # don't send any Accept-Encoding header
+    of "*":
+      "".cstring # accept any encoding supported by curl
+    else:
+      acceptEncoding.cstring # specific value
+  dog.curl.easySetOpt(optName, optVal).checkCode
 
 func `headerCallback=`*(dog: var Dog; headerCallback: HeaderCallback) =
   dog.headerCallbackOpt = headerCallback
