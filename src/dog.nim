@@ -19,7 +19,7 @@ export perform
 func initDog*(): Dog =
   result = initDogImpl()
   result.followLocation = true
-  result.acceptEncoding = "gzip"
+  result.acceptEncoding = "*"
   result.verb = Get
 
 proc fetch*(client: var Dog; url: string): string =
