@@ -211,18 +211,6 @@ proc perform*(dog: var Dog) =
     WinHttpReceiveResponse(hRequest, nil).checkVal
 
     var
-      statusCode: Dword
-      dwSize = sizeof(Dword).Dword
-    WinHttpQueryHeaders(
-      hRequest,
-      WinhttpQueryStatusCode or WinhttpQueryFlagNumber,
-      nil,
-      statusCode.addr,
-      dwSize.addr,
-      nil
-    ).checkVal
-
-    var
       responseHeaderBytes: Dword
       responseHeaderBuf: string
 
