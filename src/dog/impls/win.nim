@@ -29,7 +29,7 @@ type
     headerCallbackOpt: HeaderCallback
     bodyCallbackOpt: DataCallback
 
-    hSession: HInternet
+    hSession {.requiresInit.}: HInternet
     hConnect: HInternet
 
     port: InternetPort
@@ -276,11 +276,13 @@ proc perform*(dog: var Dog) =
     discard WinHttpCloseHandle(hRequest)
 
 proc initDogImpl*(): Dog =
-  result.hSession = WinHttpOpen(
-    nil,
-    WinhttpAccessTypeAutomaticProxy,
-    nil,
-    nil,
-    0
-  ).checkVal
+  result = Dog(
+    hSession: WinHttpOpen(
+      nil,
+      WinhttpAccessTypeAutomaticProxy,
+      nil,
+      nil,
+      0
+    ).checkVal,
+  )
   result.verb = Get
