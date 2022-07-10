@@ -16,6 +16,9 @@ export `headerCallback=`
 export `bodyCallback=`
 export perform
 
+type
+  DownloadCallback = proc (totalBytes: Option[BiggestInt]; downloadedBytes: BiggestInt)
+
 func initDog*(): Dog =
   result = initDogImpl()
   result.followLocation = true
@@ -42,28 +45,45 @@ proc fetch*(url: string): string =
   var client = initDog()
   client.fetch(url)
 
-proc download*(client: var Dog; url: string; filename = ""): string =
+proc download*(client: var Dog; url: string; filename = ""; callback: DownloadCallback): string =
   var
     outFile: File
     filename = filename
     effectiveFilename: string
+    totalBytes: Option[BiggestInt]
+    downloadedBytes: BiggestInt
+    isCompressed = false
   client.url = url
   if filename == "":
     filename = getFilenameFromUrl(url)
     client.headerCallback = proc (key, value: string) =
-      if key.toLowerAscii == "content-disposition":
+      case key.toLowerAscii
+      of "content-disposition":
         let suggestedFilename = parseContentDispositionFilename(value)
         if suggestedFilename.isSome:
           filename = suggestedFilename.get
+      of "content-length":
+        if not isCompressed:
+          try:
+            totalBytes = value.parseBiggestInt.some
+          except ValueError:
+            discard
+      of "content-encoding":
+        if value.strip != "":
+          isCompressed = true
+          totalBytes.reset()
   client.bodyCallback = proc (data: openArray[byte]) =
     if outFile.isNil:
       effectiveFilename = filename.toValidFilename.getUniqueFilename
       outFile = open(effectiveFilename, fmWrite)
     if outFile.writeBytes(data, 0, data.len) < data.len:
       raise newException(DogError, "Failed to write to file")
+    downloadedBytes += data.len
+    if not callback.isNil:
+      callback(totalBytes, downloadedBytes)
   client.perform()
   effectiveFilename
 
-proc download*(url: string; filename = ""): string =
+proc download*(url: string; filename = ""; callback: DownloadCallback): string =
   var client = initDog()
-  client.download(url, filename)
+  client.download(url, filename, callback)
