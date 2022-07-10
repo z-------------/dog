@@ -45,7 +45,7 @@ proc fetch*(url: string): string =
   var client = initDog()
   client.fetch(url)
 
-proc download*(client: var Dog; url: string; filename = ""; callback: DownloadCallback): string =
+proc download*(client: var Dog; url: string; filename = ""; callback: DownloadCallback = nil): string =
   var
     outFile: File
     filename = filename
@@ -84,6 +84,6 @@ proc download*(client: var Dog; url: string; filename = ""; callback: DownloadCa
   client.perform()
   effectiveFilename
 
-proc download*(url: string; filename = ""; callback: DownloadCallback): string =
+proc download*(url: string; filename = ""; callback: DownloadCallback = nil): string =
   var client = initDog()
   client.download(url, filename, callback)
